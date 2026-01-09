@@ -1,5 +1,7 @@
 # OPM Federal Workforce Data
 
+> **Note:** This was put together quickly and may have errors. Please verify anything important against the original source at [data.opm.gov](https://data.opm.gov).
+
 OPM already has a bunch of premade visualizations on [data.opm.gov](https://data.opm.gov) that cover common questions about the federal workforce - workforce size, demographics, separations, etc. If one of those answers your question, use that.
 
 This repo is for when you need the raw data for custom analysis:
@@ -37,8 +39,12 @@ Click the badge above to open the notebook. It loads all accessions and separati
 
 No auth required, no local setup.
 
+## Other Resources
+
+- [OPM Visualization Catalog](https://newfedscope.netlify.app/) - Searchable index of OPM's built-in dashboards and what filters/variables each one supports
+
 ## Status
 
-- Accessions: 5 years done
-- Separations: 5 years done
-- Employment: working on it (these files are ~780MB each so it takes a while)
+- Accessions: 5 years (Jan 2021 - Nov 2025)
+- Separations: 5 years (Jan 2021 - Nov 2025)
+- Employment: 5 years (Jan 2021 - Nov 2025)

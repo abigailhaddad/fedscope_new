@@ -497,6 +497,9 @@
         <header>
             <h1>OPM Federal Workforce Data Portal</h1>
             <p class="subtitle">Visualization catalog • Raw data docs • Unused variables</p>
+            <p style="background: rgba(255,255,255,0.2); padding: 10px 15px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem;">
+                ⚠️ Put together quickly - may have errors. Verify against <a href="https://data.opm.gov" style="color: white;">data.opm.gov</a>
+            </p>
         </header>
 
         <div class="tabs">
@@ -521,16 +524,16 @@
                 </div>
 
                 <div class="filters-section">
-                    <div class="filters-label">🏷️ Click variables to filter dashboards</div>
+                    <div class="filters-label">🏷️ Click filters to find dashboards</div>
                     <div id="variableFilters" class="variable-filters"></div>
                     <div class="filter-mode">
                         <label>
                             <input type="radio" name="filterMode" value="any" checked>
-                            Show dashboards with ANY selected variable
+                            Show dashboards with ANY selected filter
                         </label>
                         <label>
                             <input type="radio" name="filterMode" value="all">
-                            Show dashboards with ALL selected variables
+                            Show dashboards with ALL selected filters
                         </label>
                         <button id="clearFilters" class="clear-filters" style="display: none;">Clear All</button>
                     </div>
@@ -726,23 +729,12 @@
 
             <div class="unused-var">
                 <h4><code>stem_occupation</code> & <code>stem_occupation_type</code></h4>
-                <p>Classifies positions as STEM, Health, or other occupations. More granular breakdown includes Engineering, Technology, Science, and Mathematics disciplines.</p>
+                <p>Pre-computed aggregation of occupational series into STEM/Health/Other categories. If you already have occupational_series, this is just a convenience grouping.</p>
                 <div class="variables">
                     <span class="variable-tag">ALL OTHER OCCUPATIONS (72.8%)</span>
                     <span class="variable-tag">STEM OCCUPATIONS (18.4%)</span>
                     <span class="variable-tag">HEALTH OCCUPATIONS (8.7%)</span>
-                    <span class="variable-tag">ENGINEERING</span>
-                    <span class="variable-tag">TECHNOLOGY</span>
-                    <span class="variable-tag">SCIENCE</span>
-                    <span class="variable-tag">MATHEMATICS</span>
                 </div>
-                <p style="margin-top: 15px;"><strong>Potential analyses:</strong></p>
-                <ul>
-                    <li>Which agencies have the highest concentration of STEM workers?</li>
-                    <li>How has STEM employment changed over time?</li>
-                    <li>What is the separation rate for STEM vs non-STEM positions?</li>
-                    <li>Are STEM positions more likely to be filled by new hires or transfers?</li>
-                </ul>
             </div>
 
             <div class="unused-var">
@@ -825,255 +817,212 @@
         const dashboards = [
             {
                 category: "Workforce Size & Composition",
-                title: "The Federal Civilian Workforce Over Time",
-                variables: ["Department", "Agency", "Subagency", "Fiscal Year"],
-                url: "https://data.opm.gov/explore-data/analytics/workforce-size-and-composition",
-                questions: [
-                    "How has the total federal workforce size changed over the past decade?",
-                    "What is the trend in employee count for a specific agency?"
-                ]
+                title: "The federal civilian workforce over time",
+                filters: ["Department", "Agency", "Subagency", "Fiscal year range"],
+                viewBy: [],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/workforce-size-and-composition"
             },
             {
                 category: "Workforce Size & Composition",
-                title: "Federal Workforce by Agency and Occupation",
-                variables: ["Department", "Agency", "Subagency", "Occupational Series"],
-                url: "https://data.opm.gov/explore-data/analytics/workforce-size-and-composition",
-                questions: [
-                    "Which agencies employ the most IT specialists?",
-                    "How does workforce distribution vary across different occupational series?"
-                ]
+                title: "Federal workforce by agency and occupation",
+                filters: ["Department", "Agency", "Subagency", "Occupational series"],
+                viewBy: ["Department", "Agency", "Subagency", "Series"],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/workforce-size-and-composition"
             },
             {
                 category: "Workforce Size & Composition",
-                title: "Federal Workforce by Appointment Type",
-                variables: ["Department", "Agency", "Service Type", "Permanent/Temporary"],
-                url: "https://data.opm.gov/explore-data/analytics/workforce-size-and-composition",
-                questions: [
-                    "What percentage of federal employees are in permanent vs. temporary positions?",
-                    "Which agencies rely most heavily on non-permanent staff?"
-                ]
+                title: "Federal workforce by appointment type",
+                filters: ["Department", "Agency", "Subagency", "Service type", "Permanent/Temporary", "Appointment type"],
+                viewBy: ["Department", "Agency", "Subagency", "Appointment type"],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/workforce-size-and-composition"
             },
             {
                 category: "Workforce Size & Composition",
-                title: "Federal Workforce by Bargaining Unit Status",
-                variables: ["Department", "Agency", "Bargaining Unit Eligibility", "Date Range"],
-                url: "https://data.opm.gov/explore-data/analytics/workforce-size-and-composition",
-                questions: [
-                    "What proportion of employees are union-eligible but not in a bargaining unit?",
-                    "How has bargaining unit membership trended over time?"
-                ]
+                title: "Federal workforce by bargaining unit status",
+                filters: ["Department", "Agency", "Subagency", "Group", "Date range"],
+                viewBy: ["Percentage", "Employee count"],
+                metric: "Percentage, Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/workforce-size-and-composition"
             },
             {
                 category: "Workforce Changes",
-                title: "Federal Workforce Changes Over Time",
-                variables: ["Department", "Agency", "Subagency", "Fiscal Year"],
-                url: "https://data.opm.gov/explore-data/analytics/workforce-changes",
-                questions: [
-                    "What is the net change in federal employment year over year?",
-                    "During which fiscal years did the workforce grow or shrink the most?"
-                ]
+                title: "Federal workforce changes over time",
+                filters: ["Department", "Agency", "Subagency", "Personnel action date (fiscal year)"],
+                viewBy: [],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/workforce-changes"
             },
             {
                 category: "Workforce Changes",
-                title: "Federal Workforce Changes by Agency",
-                variables: ["Department", "Agency", "Subagency", "Fiscal Year"],
-                url: "https://data.opm.gov/explore-data/analytics/workforce-changes",
-                questions: [
-                    "Which agencies experienced the largest workforce changes?",
-                    "How do workforce changes compare across departments?"
-                ]
+                title: "Federal workforce changes by agency",
+                filters: ["Department", "Agency", "Subagency", "Personnel action date (fiscal year)"],
+                viewBy: ["Department", "Agency", "Subagency"],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/workforce-changes"
             },
             {
                 category: "Workforce Changes",
-                title: "Separations and Accessions Since January 20, 2025",
-                variables: ["Department", "Agency", "Occupational Series", "Action Types"],
-                url: "https://data.opm.gov/explore-data/analytics/workforce-changes",
-                questions: [
-                    "What is the net hiring vs. separation balance since the new administration?",
-                    "Which occupational series have seen the most separations?"
-                ]
+                title: "Separations and accessions since January 20, 2025",
+                filters: ["Department", "Agency", "Subagency", "Occupational series", "Separation actions", "Accession actions"],
+                viewBy: ["Department", "Agency", "Subagency", "Series"],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/workforce-changes"
             },
             {
                 category: "Workforce Changes",
-                title: "Separations and Accessions Over Time",
-                variables: ["Department", "Agency", "Personnel Action Type", "Fiscal Year"],
-                url: "https://data.opm.gov/explore-data/analytics/workforce-changes",
-                questions: [
-                    "What are the historical trends in new hires vs. retirements?",
-                    "When do agencies typically see the highest turnover?"
-                ]
+                title: "Separations and accessions over time",
+                filters: ["Department", "Agency", "Subagency", "Personnel action type", "Personnel action", "Personnel action date (fiscal year)"],
+                viewBy: [],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/workforce-changes"
             },
             {
                 category: "Compensation, Performance & Leave",
-                title: "Federal Workforce by Pay Plan and Grade",
-                variables: ["Department", "Agency", "Subagency", "Fiscal Year"],
-                url: "https://data.opm.gov/explore-data/analytics/compensation-performance-leave",
-                questions: [
-                    "What is the distribution of employees across GS grades?",
-                    "How does pay grade composition differ by agency?"
-                ]
+                title: "Federal workforce by pay plan and grade",
+                filters: ["Department", "Agency", "Subagency", "Fiscal year"],
+                viewBy: [],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/compensation-performance-leave"
             },
             {
                 category: "Compensation, Performance & Leave",
-                title: "Salary Distribution by Agency and Series",
-                variables: ["Department", "Agency", "Occupational Series", "Fiscal Year"],
-                url: "https://data.opm.gov/explore-data/analytics/compensation-performance-leave",
-                questions: [
-                    "What is the average salary for a specific occupational series?",
-                    "Which agencies pay the highest salaries for comparable positions?"
-                ]
+                title: "Salary distribution by agency and series",
+                filters: ["Department", "Agency", "Subagency", "Fiscal year"],
+                viewBy: ["Subagency", "Series"],
+                metric: "Salary ($)",
+                url: "https://data.opm.gov/explore-data/analytics/compensation-performance-leave"
             },
             {
                 category: "Compensation, Performance & Leave",
-                title: "Performance Ratings Distribution",
-                variables: ["Department", "Agency", "Rating Pattern", "Fiscal Year"],
-                url: "https://data.opm.gov/explore-data/analytics/compensation-performance-leave",
-                questions: [
-                    "What percentage of employees receive the highest performance ratings?",
-                    "How do performance ratings vary across departments?"
-                ]
+                title: "Performance ratings distribution",
+                filters: ["Department", "Rating pattern", "Fiscal year"],
+                viewBy: [],
+                metric: "Employee count, Percentage",
+                url: "https://data.opm.gov/explore-data/analytics/compensation-performance-leave"
             },
             {
                 category: "Compensation, Performance & Leave",
-                title: "Use of Administrative Leave",
-                variables: ["Department", "Admin Leave Type", "Pay Period Date Range"],
-                url: "https://data.opm.gov/explore-data/analytics/compensation-performance-leave",
-                questions: [
-                    "How much administrative leave is being used for investigations?",
-                    "What are the trends in administrative leave usage over time?"
-                ]
+                title: "Use of administrative leave",
+                filters: ["Department", "Admin leave type", "Pay period start date range"],
+                viewBy: [],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/compensation-performance-leave"
             },
             {
                 category: "Federal Recruitment",
-                title: "Current Job Announcements by Agency",
-                variables: ["Department", "Agency", "Occupational Series", "Hiring Path"],
-                url: "https://data.opm.gov/explore-data/analytics/federal-recruitment",
-                questions: [
-                    "Which agencies currently have the most open positions?",
-                    "What types of jobs are federal agencies actively recruiting for?"
-                ]
+                title: "Current job announcements by agency",
+                filters: ["Department", "Agency", "Subagency", "Occupational series", "Hiring path"],
+                viewBy: ["Department", "Agency", "Subagency", "Series", "Hiring path"],
+                metric: "Job announcement count",
+                url: "https://data.opm.gov/explore-data/analytics/federal-recruitment"
             },
             {
                 category: "Federal Recruitment",
-                title: "Current Job Announcements by Location",
-                variables: ["Department", "Agency", "Occupational Series", "Location"],
-                url: "https://data.opm.gov/explore-data/analytics/federal-recruitment",
-                questions: [
-                    "Where are federal jobs currently available geographically?",
-                    "Which regions have the most federal hiring opportunities?"
-                ]
+                title: "Current job announcements by location",
+                filters: ["Department", "Agency", "Subagency", "Occupational series", "Hiring path"],
+                viewBy: [],
+                metric: "Job announcement count",
+                url: "https://data.opm.gov/explore-data/analytics/federal-recruitment"
             },
             {
                 category: "Federal Recruitment",
-                title: "Job Announcements Over Time",
-                variables: ["Department", "Agency", "Occupational Series", "Fiscal Year Range"],
-                url: "https://data.opm.gov/explore-data/analytics/federal-recruitment",
-                questions: [
-                    "How has federal hiring activity changed over time?",
-                    "Is the government expanding or contracting recruitment efforts?"
-                ]
+                title: "Job announcements over time",
+                filters: ["Department", "Agency", "Subagency", "Occupational series", "Hiring path", "Fiscal year range"],
+                viewBy: [],
+                metric: "Job announcement count",
+                url: "https://data.opm.gov/explore-data/analytics/federal-recruitment"
             },
             {
                 category: "Demographics",
-                title: "Employees by Age",
-                variables: ["Department", "Agency", "Subagency", "Age Groups"],
-                url: "https://data.opm.gov/explore-data/analytics/demographics",
-                questions: [
-                    "What is the age distribution of the federal workforce?",
-                    "Which agencies have the youngest or oldest workforce?"
-                ]
+                title: "Employees by age",
+                filters: ["Department", "Agency", "Subagency"],
+                viewBy: [],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/demographics"
             },
             {
                 category: "Demographics",
-                title: "Employees by Retirement Eligibility",
-                variables: ["Department", "Agency", "Occupational Series", "Eligibility Timeframe"],
-                url: "https://data.opm.gov/explore-data/analytics/demographics",
-                questions: [
-                    "What percentage of employees are currently eligible to retire?",
-                    "How many employees will become retirement-eligible in the next decade?"
-                ]
+                title: "Employees by retirement eligibility",
+                filters: ["Department", "Agency", "Subagency", "Occupational series", "Retirement timeframe"],
+                viewBy: ["Department", "Agency", "Subagency", "Series"],
+                metric: "Percentage, Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/demographics"
             },
             {
                 category: "Demographics",
-                title: "Employees by Veteran Status",
-                variables: ["Department", "Agency", "Subagency", "Veteran Status"],
-                url: "https://data.opm.gov/explore-data/analytics/demographics",
-                questions: [
-                    "What proportion of federal employees are veterans?",
-                    "Which agencies have the highest veteran employment rates?"
-                ]
+                title: "Employees by veteran status",
+                filters: ["Department", "Agency", "Subagency"],
+                viewBy: ["Department", "Agency", "Subagency"],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/demographics"
             },
             {
                 category: "Demographics",
-                title: "Employees by Education Level",
-                variables: ["Department", "Agency", "Occupational Series", "Education Level"],
-                url: "https://data.opm.gov/explore-data/analytics/demographics",
-                questions: [
-                    "What is the educational attainment profile of the federal workforce?",
-                    "Which occupations require the highest education levels?"
-                ]
+                title: "Employees by education level",
+                filters: ["Department", "Agency", "Subagency", "Occupational series"],
+                viewBy: [],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/demographics"
             },
             {
                 category: "Location",
-                title: "Distribution of Employees by Location",
-                variables: ["Department", "Agency", "Subagency"],
-                url: "https://data.opm.gov/explore-data/analytics/location",
-                questions: [
-                    "Where are federal employees located geographically?",
-                    "What is the concentration of federal workers by state?"
-                ]
+                title: "Distribution of employees by location",
+                filters: ["Department", "Agency", "Subagency"],
+                viewBy: [],
+                metric: "Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/location"
             },
             {
                 category: "Location",
-                title: "Location by Agency and State",
-                variables: ["Department", "Agency", "State", "Fiscal Year"],
-                url: "https://data.opm.gov/explore-data/analytics/location",
-                questions: [
-                    "Which states have the largest presence of a specific agency?",
-                    "How has geographic distribution of employees changed over time?"
-                ]
+                title: "Location by agency and state",
+                filters: ["Department", "Agency", "Subagency", "State", "Fiscal year"],
+                viewBy: ["Department", "Agency", "Subagency", "State"],
+                metric: "Percentage, Employee count",
+                url: "https://data.opm.gov/explore-data/analytics/location"
             },
             {
                 category: "Location",
-                title: "Telework and Remote Work Over Time",
-                variables: ["Department", "Hours Type", "Pay Period Date Range"],
-                url: "https://data.opm.gov/explore-data/analytics/location",
-                questions: [
-                    "How have telework patterns changed since return-to-office directives?",
-                    "What percentage of work hours are performed remotely?"
-                ]
+                title: "Telework and remote work over time",
+                filters: ["Department", "Hours type", "Pay period start date range"],
+                viewBy: [],
+                metric: "Hours count",
+                url: "https://data.opm.gov/explore-data/analytics/location"
             }
         ];
 
-        // Get all unique variables
-        const allVariables = new Set();
+        // Get all unique filters
+        const allFilters = new Set();
         dashboards.forEach(d => {
-            d.variables.forEach(v => allVariables.add(v));
+            d.filters.forEach(f => allFilters.add(f));
         });
-        const uniqueVariables = Array.from(allVariables).sort();
+        const uniqueFilters = Array.from(allFilters).sort();
 
         // State
-        let activeVariables = new Set();
+        let activeFilters = new Set();
 
-        function initializeVariableFilters() {
+        function initializeFilterPills() {
             const container = document.getElementById('variableFilters');
-            container.innerHTML = uniqueVariables.map(variable => 
-                `<div class="variable-filter" data-variable="${variable}">${variable}</div>`
+            // Note: innerHTML is safe here as uniqueFilters comes from our static dashboard data
+            container.innerHTML = uniqueFilters.map(filter =>
+                `<div class="variable-filter" data-filter="${filter}">${filter}</div>`
             ).join('');
 
             // Add click handlers
             container.querySelectorAll('.variable-filter').forEach(pill => {
                 pill.addEventListener('click', () => {
-                    const variable = pill.dataset.variable;
-                    
-                    if (activeVariables.has(variable)) {
-                        activeVariables.delete(variable);
+                    const filter = pill.dataset.filter;
+
+                    if (activeFilters.has(filter)) {
+                        activeFilters.delete(filter);
                         pill.classList.remove('active');
                     } else {
-                        activeVariables.add(variable);
+                        activeFilters.add(filter);
                         pill.classList.add('active');
                     }
-                    
+
                     updateFilterDisplay();
                     filterDashboards();
                 });
@@ -1084,11 +1033,11 @@
             const clearBtn = document.getElementById('clearFilters');
             const activeDisplay = document.getElementById('activeFiltersDisplay');
             const activeCount = document.getElementById('activeFiltersCount');
-            
-            if (activeVariables.size > 0) {
+
+            if (activeFilters.size > 0) {
                 clearBtn.style.display = 'block';
                 activeDisplay.style.display = 'flex';
-                activeCount.textContent = activeVariables.size;
+                activeCount.textContent = activeFilters.size;
             } else {
                 clearBtn.style.display = 'none';
                 activeDisplay.style.display = 'none';
@@ -1098,7 +1047,7 @@
         function renderCards(filteredDashboards) {
             const container = document.getElementById('cardsContainer');
             const noResults = document.getElementById('noResults');
-            
+
             if (filteredDashboards.length === 0) {
                 container.style.display = 'none';
                 noResults.style.display = 'block';
@@ -1108,28 +1057,38 @@
             container.style.display = 'grid';
             noResults.style.display = 'none';
 
+            // Note: innerHTML is safe here as dashboard data comes from our static array
             container.innerHTML = filteredDashboards.map(dashboard => `
                 <div class="card">
                     <span class="card-category">${dashboard.category}</span>
                     <h3 class="card-title">${dashboard.title}</h3>
-                    
+
                     <div class="card-section">
-                        <div class="card-label">Variables Available</div>
+                        <div class="card-label">Filters</div>
                         <div class="variables">
-                            ${dashboard.variables.map(v => `<span class="variable-tag">${v}</span>`).join('')}
+                            ${dashboard.filters.map(f => `<span class="variable-tag">${f}</span>`).join('')}
                         </div>
                     </div>
-                    
+
+                    ${dashboard.viewBy.length > 0 ? `
                     <div class="card-section">
-                        <div class="card-label">Example Questions</div>
-                        <ul class="questions">
-                            ${dashboard.questions.map(q => `<li>${q}</li>`).join('')}
-                        </ul>
+                        <div class="card-label">View Data By</div>
+                        <div class="variables">
+                            ${dashboard.viewBy.map(v => `<span class="variable-tag">${v}</span>`).join('')}
+                        </div>
                     </div>
-                    
+                    ` : ''}
+
+                    <div class="card-section">
+                        <div class="card-label">Metric</div>
+                        <div class="variables">
+                            <span class="variable-tag">${dashboard.metric}</span>
+                        </div>
+                    </div>
+
                     <div class="card-link">
                         <a href="${dashboard.url}" target="_blank" rel="noopener">
-                            View Dashboard →
+                            View Section →
                         </a>
                     </div>
                 </div>
@@ -1149,15 +1108,15 @@
                 filtered = filtered.filter(d => d.category === category);
             }
 
-            // Filter by variables
-            if (activeVariables.size > 0) {
+            // Filter by selected filters
+            if (activeFilters.size > 0) {
                 filtered = filtered.filter(d => {
                     if (filterMode === 'any') {
-                        // Show if dashboard has ANY of the selected variables
-                        return d.variables.some(v => activeVariables.has(v));
+                        // Show if dashboard has ANY of the selected filters
+                        return d.filters.some(f => activeFilters.has(f));
                     } else {
-                        // Show if dashboard has ALL of the selected variables
-                        return Array.from(activeVariables).every(v => d.variables.includes(v));
+                        // Show if dashboard has ALL of the selected filters
+                        return Array.from(activeFilters).every(f => d.filters.includes(f));
                     }
                 });
             }
@@ -1188,7 +1147,7 @@
         });
 
         document.getElementById('clearFilters').addEventListener('click', () => {
-            activeVariables.clear();
+            activeFilters.clear();
             document.querySelectorAll('.variable-filter').forEach(pill => {
                 pill.classList.remove('active');
             });
@@ -1197,7 +1156,7 @@
         });
 
         // Initialize
-        initializeVariableFilters();
+        initializeFilterPills();
         renderCards(dashboards);
     </script>
 </body>
