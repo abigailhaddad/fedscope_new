@@ -30,7 +30,7 @@ df = duckdb.execute(f"SELECT * FROM read_parquet('{url}')").df()
 
 ## Colab Notebook
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abigailhaddad/opm/blob/main/demo.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abigailhaddad/fedscope_new/blob/main/demo.ipynb)
 
 Click the badge above to open the notebook. It loads all accessions and separations data into DuckDB and lets you:
 - See hiring vs attrition trends over time
