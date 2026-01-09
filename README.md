@@ -4,18 +4,18 @@
 
 OPM already has a bunch of premade visualizations on [data.opm.gov](https://data.opm.gov) that cover common questions about the federal workforce - workforce size, demographics, separations, etc. If one of those answers your question, use that.
 
-This repo is for when you need the raw data for custom analysis:
+This repo has some of the raw data (accessions, separations, employment) for custom analysis:
 
-1. **HuggingFace** - I've uploaded the data as parquet files so you can grab them directly or query with DuckDB
+1. **HuggingFace** - Parquet files you can grab directly or query with DuckDB
 2. **Colab notebook** - Load and explore multiple months of data without downloading anything
 
 ## Data on HuggingFace
 
-All datasets are public at [huggingface.co/abigailhaddad](https://huggingface.co/abigailhaddad):
+Datasets are public at [huggingface.co/abigailhaddad](https://huggingface.co/abigailhaddad):
 
 - **Accessions** (new hires): Jan 2021 - Nov 2025
 - **Separations** (departures): Jan 2021 - Nov 2025
-- **Employment** (workforce snapshots): *in progress*
+- **Employment** (workforce snapshots): Jan 2021 - Nov 2025
 
 Each monthly file is its own dataset, named like `opm-federal-accessions-202511`.
 
