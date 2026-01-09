@@ -32,10 +32,29 @@ SIZE_ESTIMATES = {
 
 def get_repo_name_from_filename(filename: str) -> str:
     """
-    Extract repo name from OPM filename.
+    Extract repo name from OPM filename or display name.
     Example: accessions_202511_1_2026-01-09.csv -> opm-federal-accessions-202511
+    Example: Accessions data from November 2025 -> opm-federal-accessions-202511
     """
-    # Parse: {type}_{YYYYMM}_{version}_{date}.csv
+    # Check if it's the new display format: "Accessions data from November 2025"
+    if " data from " in filename:
+        import calendar
+        month_map = {name.lower(): num for num, name in enumerate(calendar.month_name) if num}
+
+        parts = filename.split(" data from ")
+        data_type = parts[0].lower()  # accessions, separations, employment
+        date_part = parts[1].strip()  # "November 2025"
+
+        # Parse "November 2025" -> 202511
+        date_parts = date_part.split()
+        if len(date_parts) == 2:
+            month_name = date_parts[0].lower()
+            year = date_parts[1]
+            month_num = month_map.get(month_name, 0)
+            if month_num:
+                return f"opm-federal-{data_type}-{year}{month_num:02d}"
+
+    # Original format: {type}_{YYYYMM}_{version}_{date}.csv
     parts = filename.replace('.csv', '').replace('.parquet', '').split('_')
     if len(parts) >= 2:
         data_type = parts[0]  # accessions, separations, employment
