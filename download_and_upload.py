@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 from playwright.async_api import async_playwright
 from huggingface_hub import HfApi, create_repo, repo_exists, list_repo_files
+import time
 import argparse
 import re
 from tqdm import tqdm
@@ -139,8 +140,8 @@ def convert_to_parquet(csv_path: Path, parquet_dir: Path) -> Path:
     return parquet_path
 
 
-def upload_to_huggingface(parquet_path: Path, repo_id: str, token: str):
-    """Upload a parquet file to Hugging Face."""
+def upload_to_huggingface(parquet_path: Path, repo_id: str, token: str, max_retries: int = 3):
+    """Upload a parquet file to Hugging Face with retry logic."""
     api = HfApi()
 
     # Create repo if needed
@@ -149,14 +150,23 @@ def upload_to_huggingface(parquet_path: Path, repo_id: str, token: str):
     except:
         pass
 
-    # Upload with a simple name like data.parquet
-    api.upload_file(
-        path_or_fileobj=str(parquet_path),
-        path_in_repo="data.parquet",
-        repo_id=repo_id,
-        repo_type="dataset",
-        token=token,
-    )
+    # Upload with retries
+    for attempt in range(max_retries):
+        try:
+            api.upload_file(
+                path_or_fileobj=str(parquet_path),
+                path_in_repo="data.parquet",
+                repo_id=repo_id,
+                repo_type="dataset",
+                token=token,
+            )
+            return repo_id
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** (attempt + 1)  # 2, 4, 8 seconds
+                time.sleep(wait_time)
+            else:
+                raise e
     return repo_id
 
 
@@ -170,7 +180,7 @@ async def download_and_upload_all(page, data_type: str, download_dir: Path, parq
     total = await set_filters(page, data_type, start_date, end_date)
     if total == 0:
         print("  No files found, skipping...")
-        return []
+        return [], []
 
     print(f"  Found {total} files")
 
@@ -183,6 +193,7 @@ async def download_and_upload_all(page, data_type: str, download_dir: Path, parq
         pass
 
     uploaded_repos = []
+    failed_files = []
     pbar = tqdm(total=total, desc=f"  {data_type}", unit="file")
 
     page_num = 1
@@ -191,6 +202,7 @@ async def download_and_upload_all(page, data_type: str, download_dir: Path, parq
         count = await buttons.count()
 
         for i in range(count):
+            card_filename = None
             try:
                 # Check if already uploaded before downloading
                 card_filename = await get_card_filename(page, i)
@@ -220,7 +232,7 @@ async def download_and_upload_all(page, data_type: str, download_dir: Path, parq
                     "size": f"{csv_size:.0f}→{parquet_size:.1f}MB"
                 })
 
-                # Upload
+                # Upload (now with retries built-in)
                 upload_to_huggingface(parquet_path, repo_id, token)
                 uploaded_repos.append(repo_id)
 
@@ -232,9 +244,13 @@ async def download_and_upload_all(page, data_type: str, download_dir: Path, parq
                 await asyncio.sleep(0.3)
 
             except Exception as e:
-                pbar.write(f"  ⚠️ Error: {str(e)[:60]}")
+                error_msg = str(e)[:60]
+                pbar.write(f"  ⚠️ Error: {error_msg}")
+                if card_filename:
+                    failed_files.append({"filename": card_filename, "error": error_msg})
                 await page.keyboard.press('Escape')
                 await asyncio.sleep(0.5)
+                pbar.update(1)
                 continue
 
         next_button = page.locator('button[aria-label="Go to next page"]')
@@ -247,7 +263,9 @@ async def download_and_upload_all(page, data_type: str, download_dir: Path, parq
 
     pbar.close()
     print(f"  ✅ Uploaded {len(uploaded_repos)} datasets")
-    return uploaded_repos
+    if failed_files:
+        print(f"  ❌ Failed {len(failed_files)} files")
+    return uploaded_repos, failed_files
 
 
 async def main():
@@ -280,17 +298,19 @@ async def main():
         print(f"  {dtype}: {months} datasets, ~{est_parquet:.0f} MB total parquet")
 
     all_repos = []
+    all_failures = []
 
     async with async_playwright() as playwright:
         browser, context, page = await setup_page(playwright)
 
         try:
             for data_type in args.types:
-                repos = await download_and_upload_all(
+                repos, failures = await download_and_upload_all(
                     page, data_type, DOWNLOAD_DIR, PARQUET_DIR,
                     args.start, args.end, args.token
                 )
                 all_repos.extend(repos)
+                all_failures.extend(failures)
 
         finally:
             await browser.close()
@@ -299,6 +319,13 @@ async def main():
     print("🎉 DONE!")
     print("="*60)
     print(f"Created {len(all_repos)} HuggingFace datasets")
+
+    if all_failures:
+        print(f"\n⚠️ {len(all_failures)} files failed:")
+        for f in all_failures:
+            print(f"  - {f['filename']}: {f['error']}")
+        print("\nRe-run the script to retry failed files.")
+
     print(f"\nExample datasets:")
     for repo in all_repos[:3]:
         print(f"  📁 https://huggingface.co/datasets/{repo}")
