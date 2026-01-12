@@ -52,14 +52,22 @@ def get_baseline_counts() -> pd.DataFrame:
 
 
 def get_monthly_changes(data_type: str) -> pd.DataFrame:
-    """Get monthly separations or accessions for 2210 by agency."""
+    """Get monthly separations or accessions for 2210 by agency.
+
+    Note: Filters on personnel_action_effective_date_yyyymm to exclude
+    delayed reporting from prior years (each file has ~50 rows from 2 years ago).
+    """
     print(f"\nDownloading {data_type} data...")
+    date_col = "personnel_action_effective_date_yyyymm"
 
     all_data = []
     for month in tqdm(CHANGE_MONTHS, desc=f"  {data_type}"):
         try:
             df = download_dataset(data_type, month)
-            it_df = df[df["occupational_series_code"] == SERIES_CODE]
+            # Filter to 2210 AND only include actions that actually happened in 2025
+            it_df = df[(df["occupational_series_code"] == SERIES_CODE) &
+                       (df[date_col].str.startswith("2025"))]
+            it_df = it_df.copy()
             it_df["count"] = pd.to_numeric(it_df["count"], errors="coerce").fillna(0)
 
             monthly = it_df.groupby(["agency", "agency_code"])["count"].sum().reset_index()

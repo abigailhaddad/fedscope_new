@@ -77,10 +77,23 @@ def validate_months(repos: list[str], data_type: str) -> bool:
 
 
 def download_and_filter(repo_id: str, agency_codes: list[str], data_type: str) -> pd.DataFrame:
-    """Download a dataset and filter for specific agencies."""
+    """Download a dataset and filter for specific agencies.
+
+    Also filters on personnel_action_effective_date_yyyymm to exclude delayed
+    reporting from prior years (~50 rows per file are from exactly 2 years prior).
+    We extract the expected year from the repo_id and only include matching years.
+    """
     path = hf_hub_download(repo_id=repo_id, filename="data.parquet", repo_type="dataset")
     df = pd.read_parquet(path)
     df = df[df["agency_code"].isin(agency_codes)]
+
+    # Extract expected year from repo_id (e.g., "opm-federal-accessions-202503" -> "2025")
+    date_col = "personnel_action_effective_date_yyyymm"
+    if date_col in df.columns:
+        repo_month = repo_id.split("-")[-1]  # e.g., "202503"
+        expected_year = repo_month[:4]  # e.g., "2025"
+        df = df[df[date_col].str.startswith(expected_year)]
+
     df["data_type"] = data_type  # Add column to distinguish accessions vs separations
     return df
 
