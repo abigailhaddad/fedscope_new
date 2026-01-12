@@ -4,6 +4,8 @@ Pulls from HuggingFace, filters, combines both data types, and saves as CSV.
 Validates that all expected months are present before saving.
 """
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
@@ -16,6 +18,7 @@ load_dotenv()
 
 HF_USERNAME = "abigailhaddad"
 OUTPUT_DIR = Path("data/agency_subsets")
+LOCAL_CACHE_DIR = Path("data/parquet")  # Check here first before downloading
 
 # Expected date range (inclusive)
 START_YEAR_MONTH = (2021, 1)
@@ -42,16 +45,16 @@ def get_expected_months() -> set[str]:
     return expected
 
 
-def extract_year_month(repo_id: str) -> str | None:
-    """Extract YYYYMM from repo ID like 'user/opm-federal-accessions-202511'."""
-    match = re.search(r'-(\d{6})$', repo_id)
-    return match.group(1) if match else None
-
-
 def get_available_datasets(data_type: str) -> list[str]:
     """Get all available dataset repo IDs for a data type."""
     datasets = list_datasets(author=HF_USERNAME, search=f"opm-federal-{data_type.lower()}")
     return [d.id for d in datasets]
+
+
+def extract_year_month(repo_id: str) -> str | None:
+    """Extract YYYYMM from repo ID like 'user/opm-federal-accessions-202511'."""
+    match = re.search(r'-(\d{6})$', repo_id)
+    return match.group(1) if match else None
 
 
 def validate_months(repos: list[str], data_type: str) -> bool:
