@@ -21,7 +21,7 @@ OUTPUT_DIR = Path("data/agency_subsets")
 LOCAL_CACHE_DIR = Path("data/parquet")  # Check here first before downloading
 
 # Expected date range (inclusive)
-START_YEAR_MONTH = (2021, 1)
+START_YEAR_MONTH = (2015, 1)
 END_YEAR_MONTH = (2025, 11)
 
 AGENCIES = {
@@ -79,23 +79,47 @@ def validate_months(repos: list[str], data_type: str) -> bool:
     return True
 
 
-def download_and_filter(repo_id: str, agency_codes: list[str], data_type: str) -> pd.DataFrame:
+def download_and_filter(repo_id: str, agency_codes: list[str], data_type: str,
+                        dropped_tracker: dict) -> pd.DataFrame:
     """Download a dataset and filter for specific agencies.
 
-    Also filters on personnel_action_effective_date_yyyymm to exclude delayed
-    reporting from prior years (~50 rows per file are from exactly 2 years prior).
-    We extract the expected year from the repo_id and only include matching years.
+    Filters on personnel_action_effective_date_yyyymm to only include data
+    within our date range. Delayed reporting from prior years is kept if it
+    falls within our window (e.g., 2023 data in a 2025 file is kept if our
+    range includes 2023).
+
+    Tracks dropped records in dropped_tracker dict for summary at end.
     """
     path = hf_hub_download(repo_id=repo_id, filename="data.parquet", repo_type="dataset")
     df = pd.read_parquet(path)
+
+    # Filter by agency FIRST
     df = df[df["agency_code"].isin(agency_codes)]
 
-    # Extract expected year from repo_id (e.g., "opm-federal-accessions-202503" -> "2025")
+    if len(df) == 0:
+        df["data_type"] = data_type
+        return df
+
+    # Check what would be dropped and track it
     date_col = "personnel_action_effective_date_yyyymm"
     if date_col in df.columns:
-        repo_month = repo_id.split("-")[-1]  # e.g., "202503"
-        expected_year = repo_month[:4]  # e.g., "2025"
-        df = df[df[date_col].str.startswith(expected_year)]
+        start_yyyymm = f"{START_YEAR_MONTH[0]}{START_YEAR_MONTH[1]:02d}"
+        end_yyyymm = f"{END_YEAR_MONTH[0]}{END_YEAR_MONTH[1]:02d}"
+
+        in_range = (df[date_col] >= start_yyyymm) & (df[date_col] <= end_yyyymm)
+        dropped = df[~in_range]
+
+        if len(dropped) > 0:
+            dropped = dropped.copy()
+            dropped["count"] = pd.to_numeric(dropped["count"], errors="coerce").fillna(0)
+            for _, row in dropped.iterrows():
+                key = (row["agency_code"], data_type)
+                if key not in dropped_tracker:
+                    dropped_tracker[key] = {"count": 0, "months": set()}
+                dropped_tracker[key]["count"] += int(row["count"])
+                dropped_tracker[key]["months"].add(row[date_col])
+
+        df = df[in_range]
 
     df["data_type"] = data_type  # Add column to distinguish accessions vs separations
     return df
@@ -129,6 +153,7 @@ def main():
 
     # Collect data per agency across both data types
     agency_dfs = {code: [] for code in agency_codes}
+    dropped_tracker = {}  # Track what's dropped for summary
 
     for data_type in ["accessions", "separations"]:
         print(f"\n{'='*60}")
@@ -139,7 +164,7 @@ def main():
 
         for repo_id in tqdm(repos, desc=f"Downloading {data_type}"):
             try:
-                df = download_and_filter(repo_id, agency_codes, data_type)
+                df = download_and_filter(repo_id, agency_codes, data_type, dropped_tracker)
                 for code in agency_codes:
                     agency_df = df[df["agency_code"] == code]
                     if len(agency_df) > 0:
@@ -147,6 +172,22 @@ def main():
             except Exception as e:
                 print(f"  Error with {repo_id}: {e}")
                 continue
+
+    # Print dropped data summary
+    if dropped_tracker:
+        print(f"\n{'='*60}")
+        print("DROPPED DATA SUMMARY (outside date range)")
+        print(f"{'='*60}")
+        start_yyyymm = f"{START_YEAR_MONTH[0]}{START_YEAR_MONTH[1]:02d}"
+        end_yyyymm = f"{END_YEAR_MONTH[0]}{END_YEAR_MONTH[1]:02d}"
+        print(f"  Date range: {start_yyyymm} - {end_yyyymm}\n")
+
+        for (agency_code, data_type), info in sorted(dropped_tracker.items()):
+            agency_name = next((n for c, n in AGENCIES.items() if c == agency_code), agency_code)
+            months_sorted = sorted(info["months"])
+            month_range = f"{months_sorted[0]} to {months_sorted[-1]}" if len(months_sorted) > 1 else months_sorted[0]
+            print(f"  {agency_name.upper()} {data_type}: {info['count']:,} records dropped")
+            print(f"    Months: {month_range} ({len(months_sorted)} unique months)")
 
     # Save combined data for each agency
     print(f"\n{'='*60}")
