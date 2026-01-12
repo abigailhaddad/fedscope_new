@@ -13,6 +13,9 @@ import time
 import argparse
 import re
 from tqdm import tqdm
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configuration
 HF_TOKEN = os.environ.get("HF_TOKEN")
